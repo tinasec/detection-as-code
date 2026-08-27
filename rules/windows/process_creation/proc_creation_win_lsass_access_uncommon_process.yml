@@ -1,0 +1,41 @@
+title: Suspicious LSASS Access From Uncommon Process
+id: 8f0e5f2a-9e3b-4b7a-9c9d-2a6f0a7e1c4d
+related:
+  - id: 3b1f7a5e-1c9d-4a2b-8e6f-5d4c3b2a1f0e
+    type: derived
+status: test
+description: Detects process access to lsass.exe (a common credential-dumping target, ATT&CK T1003.001) from a process image that is not on the project's known allow-list of debuggers, EDR agents, or backup tools.
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+author: tina
+date: 2026-06-02
+modified: 2026-08-10
+tags:
+  - attack.credential-access
+  - attack.t1003.001
+logsource:
+  category: process_access
+  product: windows
+detection:
+  selection:
+    TargetImage|endswith: '\lsass.exe'
+  filter_main_known_tools:
+    SourceImage|endswith:
+      - '\MsMpEng.exe'
+      - '\ProcessHacker.exe'
+  filter_optional_backup_agent:
+    SourceImage|endswith: '\veeam_agent.exe'
+  condition: selection and not 1 of filter_main_* and not 1 of filter_optional_*
+fields:
+  - SourceImage
+  - TargetImage
+  - GrantedAccess
+falsepositives:
+  - Approved EDR/AV engines not yet in filter_main_known_tools (update allow-list)
+  - Backup agents performing volume shadow copy operations (see filter_optional_backup_agent)
+level: high
+custom:
+  version: "1.2"
+  tenant: abc
+  type: ttp
+  tunning: false
